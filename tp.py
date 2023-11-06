@@ -1,10 +1,9 @@
 import pandas as pd
-import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import ttk
-import community 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Cargar el archivo CSV
 archivo_csv = 'universidades.csv'
@@ -21,76 +20,60 @@ G = nx.Graph()
 for universidad in universidades:
     G.add_node(universidad)
 
-# Agregar aristas entre nodos si el puntaje de investigación es menor a 1
+# Agregar aristas entre nodos 
 for i in range(len(universidades)):
     for j in range(i + 1, len(universidades)):
         puntaje1 = puntajes_investigacion[i]
         puntaje2 = puntajes_investigacion[j]
-        if abs(puntaje1 - puntaje2) < 0.1:
+        if abs(puntaje1 - puntaje2) < 3:
             G.add_edge(universidades[i], universidades[j])
 
-# Dibujar el grafo
-pos = nx.spring_layout(G, seed=42, k=0.2)  # Layout para la disposición de nodos
-plt.figure(figsize=(12, 8))
-nx.draw(G, pos, with_labels=True, node_size=100, node_color='skyblue', font_size=8, font_color='black', font_weight='bold', width=0.5)
-plt.title("Grafo de Universidades basado en Correlación de Investigación (Puntaje < 1)")
-plt.show()
-
-def detect_communities():
-    criterion = float(criterion_entry.get())
-    G.clear()
-    for i in range(len(universidades)):
-        for j in range(i + 1, len(universidades)):
-            puntaje1 = puntajes_investigacion[i]
-            puntaje2 = puntajes_investigacion[j]
-            if abs(puntaje1 - puntaje2) < criterion:
-                G.add_edge(universidades[i], universidades[j])
-    # Dibujar el grafo actualizado
-    pos = nx.spring_layout(G, seed=42, k=0.2)
-    plt.figure(figsize=(12, 8))
+# Función para dibujar el grafo
+def dibujar_grafo():
+    pos = nx.spring_layout(G, seed=42, k=0.2)  # Layout para la disposición de nodos
+    plt.figure(figsize=(6, 4))
     nx.draw(G, pos, with_labels=True, node_size=100, node_color='skyblue', font_size=8, font_color='black', font_weight='bold', width=0.5)
-    plt.title("Grafo de Universidades basado en Correlación de Investigación (Puntaje < {})".format(criterion))
-    plt.show()
+    plt.title("Grafo de Universidades basado en Correlación de Investigación (Puntaje < 1)")
+    canvas = FigureCanvasTkAgg(plt.gcf(), master=frame)
+    canvas_widget = canvas.get_tk_widget()
+    canvas_widget.grid(column=0, row=4, columnspan=2)
 
-    communities = detect_communities_in_graph(G)
-    result_text = "Comunidades detectadas:\n"
-    for community_id, nodes in communities.items():
-        result_text += f"Comunidad {community_id + 1}: {', '.join(nodes)}\n"
-    result_textbox.delete(1.0, tk.END)  # Borrar el contenido anterior
-    result_textbox.insert(tk.END, result_text)
+# Función para calcular la distancia entre dos universidades utilizando BFS
+def calcular_distancia():
+    universidad1 = combo_universidad1.get()
+    universidad2 = combo_universidad2.get()
+    
+    if universidad1 == universidad2:
+        resultado.set("Las universidades son iguales")
+    else:
+        distancia = nx.shortest_path_length(G, source=universidad1, target=universidad2)
+        resultado.set(f"Distancia entre {universidad1} y {universidad2}: {distancia} saltos")
 
-def detect_communities_in_graph(graph):
-    partition = community.best_partition(graph)
-    communities = {}
-    for node, community_id in partition.items():
-        if community_id not in communities:
-            communities[community_id] = [node]
-        else:
-            communities[community_id].append(node)
-    return communities
-
-# Crear la ventana principal
+# Crear la interfaz de usuario
 root = tk.Tk()
-root.title("Detección de Comunidades en Universidades")
+root.title("Distancia entre Universidades")
 
-# Crear un marco para el formulario
 frame = ttk.Frame(root)
-frame.grid(column=0, row=0, padx=10, pady=10)
+frame.grid(column=0, row=0)
 
-# Caja de texto para el criterio del puntaje de investigación
-criterion_label = ttk.Label(frame, text="Criterio de Puntaje de Investigación:")
-criterion_label.grid(column=0, row=0, padx=5, pady=5, sticky=tk.W)
-criterion_entry = ttk.Entry(frame)
-criterion_entry.grid(column=1, row=0, padx=5, pady=5)
-criterion_entry.insert(0, "1.0")  # Valor inicial por defecto
+label_universidad1 = ttk.Label(frame, text="Universidad 1:")
+label_universidad1.grid(column=0, row=0)
+combo_universidad1 = ttk.Combobox(frame, values=list(universidades))
+combo_universidad1.grid(column=1, row=0)
 
-# Botón para detectar comunidades y actualizar el grafo
-detect_button = ttk.Button(frame, text="Detectar Comunidades y Actualizar Grafo", command=detect_communities)
-detect_button.grid(column=0, row=1, columnspan=2, padx=5, pady=10)
+label_universidad2 = ttk.Label(frame, text="Universidad 2:")
+label_universidad2.grid(column=0, row=1)
+combo_universidad2 = ttk.Combobox(frame, values=list(universidades))
+combo_universidad2.grid(column=1, row=1)
 
-# Textbox para mostrar el resultado
-result_textbox = tk.Text(frame, wrap=tk.WORD, width=250, height=50)
-result_textbox.grid(column=0, row=2, padx=5, pady=10)
+boton_calcular = ttk.Button(frame, text="Calcular Distancia", command=calcular_distancia)
+boton_calcular.grid(column=0, row=2, columnspan=2)
+
+resultado = tk.StringVar()
+label_resultado = ttk.Label(frame, textvariable=resultado)
+label_resultado.grid(column=0, row=3, columnspan=2)
+
+# Llamar a la función para dibujar el grafo
+dibujar_grafo()
 
 root.mainloop()
-
