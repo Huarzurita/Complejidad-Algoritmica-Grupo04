@@ -148,7 +148,11 @@ def empezar_programa():
         ax.set_title(f"Grafo actualizado (Criterio: < {criterio_diferencia})")
         llenar_lista()  # Llenar la lista de universidades
         canvas.draw()
-
+    
+    # Función para salir del programa
+    def salir_programa():
+        root.destroy()
+    
     # Función para calcular la distancia entre dos universidades utilizando BFS
     def calcular_distancia():
         universidad1 = combo_universidad1.get()
@@ -172,6 +176,10 @@ def empezar_programa():
     # Botón para actualizar el grafo
     boton_actualizar_grafo = Button(frame, text="Actualizar Grafo", command=actualizar_grafo, height=2, width=15)
     boton_actualizar_grafo.grid(column=0, row=5, columnspan=2)
+    
+    # Botón para salir del programa
+    boton_salir = ttk.Button(frame, text="Salir", command=salir_programa, width=20, padding=(10, 10))
+    boton_salir.grid(column=0, row=7, pady=10)
 
     # Etiqueta para mostrar el resultado
     resultado = tk.StringVar()
